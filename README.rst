@@ -2,10 +2,10 @@
 Getting Started with grafanalib
 ===============================
 
-.. image:: https://readthedocs.org/projects/grafanalib/badge/?version=latest
+.. image:: https://readthedocs.org/projects/grafanalib/badge/?version=main
     :alt: Documentation Status
     :scale: 100%
-    :target: https://grafanalib.readthedocs.io/en/latest/?badge=latest
+    :target: https://grafanalib.readthedocs.io/en/main
 
 Do you like `Grafana <http://grafana.org/>`_ but wish you could version your
 dashboard configuration? Do you find yourself repeating common patterns? If
@@ -57,7 +57,7 @@ Support
 This library is in its very early stages. We'll probably make changes that
 break backwards compatibility, although we'll try hard not to.
 
-grafanalib works with Python 3.6 through 3.10.
+grafanalib works with Python 3.6 through 3.11.
 
 Developing
 ==========

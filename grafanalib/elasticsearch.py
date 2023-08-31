@@ -2,7 +2,7 @@
 
 import attr
 import itertools
-from attr.validators import instance_of
+from attr.validators import in_, instance_of
 from grafanalib.core import AlertCondition
 
 DATE_HISTOGRAM_DEFAULT_FIELD = 'time_iso8601'
@@ -79,7 +79,7 @@ class CardinalityMetricAgg(object):
 
     https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-cardinality-aggregation.html
 
-    :param field: name of elasticsearch field to provide the maximum for
+    :param field: name of elasticsearch field to provide the cardinality for
     :param id: id of the metric
     :param hide: show/hide the metric in the final panel display
     :param inline: script to apply to the data, using '_value'
@@ -111,7 +111,7 @@ class AverageMetricAgg(object):
 
     https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-avg-aggregation.html
 
-    :param field: name of elasticsearch field to provide the maximum for
+    :param field: name of elasticsearch metric aggregator to provide the average of
     :param id: id of the metric
     :param hide: show/hide the metric in the final panel display
     :param inline: script to apply to the data, using '_value'
@@ -247,7 +247,7 @@ class BucketScriptAgg(object):
     :param id: id of the aggregator
     :param hide: show/hide the metric in the final panel display
     """
-    fields = attr.ib(default={}, validator=instance_of(dict))
+    fields = attr.ib(factory=dict, validator=instance_of(dict))
     id = attr.ib(default=0, validator=instance_of(int))
     hide = attr.ib(default=False, validator=instance_of(bool))
     script = attr.ib(default="", validator=instance_of(str))
@@ -363,6 +363,7 @@ class ElasticsearchTarget(object):
     :param query: query
     :param refId: target reference id
     :param timeField: name of the elasticsearch time field
+    :param hide: show/hide the target result in the final panel display
     """
 
     alias = attr.ib(default=None)
@@ -373,6 +374,7 @@ class ElasticsearchTarget(object):
     query = attr.ib(default="", validator=instance_of(str))
     refId = attr.ib(default="", validator=instance_of(str))
     timeField = attr.ib(default="@timestamp", validator=instance_of(str))
+    hide = attr.ib(default=False, validator=instance_of(bool))
 
     def _map_bucket_aggs(self, f):
         return attr.evolve(self, bucketAggs=list(map(f, self.bucketAggs)))
@@ -407,6 +409,7 @@ class ElasticsearchTarget(object):
             'query': self.query,
             'refId': self.refId,
             'timeField': self.timeField,
+            'hide': self.hide,
         }
 
 
@@ -437,7 +440,7 @@ class ElasticsearchAlertCondition(AlertCondition):
 class MinMetricAgg(object):
     """An aggregator that provides the min. value among the values.
     https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-min-aggregation.html
-    :param field: name of elasticsearch field to provide the maximum for
+    :param field: name of elasticsearch field to provide the minimum for
     :param hide: show/hide the metric in the final panel display
     :param id: id of the metric
     :param inline: script to apply to the data, using '_value'
@@ -468,7 +471,7 @@ class MinMetricAgg(object):
 class PercentilesMetricAgg(object):
     """A multi-value metrics aggregation that calculates one or more percentiles over numeric values extracted from the aggregated documents
     https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html
-    :param field: name of elasticsearch field to provide the maximum for
+    :param field: name of elasticsearch field to provide the percentiles for
     :param hide: show/hide the metric in the final panel display
     :param id: id of the metric
     :param inline: script to apply to the data, using '_value'
@@ -480,7 +483,7 @@ class PercentilesMetricAgg(object):
     hide = attr.ib(default=False, validator=instance_of(bool))
     inline = attr.ib(default="", validator=instance_of(str))
     percents = attr.ib(default=attr.Factory(list))
-    settings = attr.ib(default={})
+    settings = attr.ib(factory=dict)
 
     def to_json_data(self):
         self.settings = {}
@@ -497,4 +500,53 @@ class PercentilesMetricAgg(object):
             'field': self.field,
             'inlineScript': self.inline,
             'settings': self.settings,
+        }
+
+
+@attr.s
+class RateMetricAgg(object):
+    """An aggregator that provides the rate of the values.
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-rate-aggregation.html
+    :param field: name of elasticsearch field to provide the sum over
+    :param hide: show/hide the metric in the final panel display
+    :param id: id of the metric
+    :param unit: calendar interval to group by
+        supported calendar intervals
+        https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#calendar_intervals
+        "minute"
+        "hour"
+        "day"
+        "week"
+        "month"
+        "quarter"
+        "year"
+    :param mode: sum or count the values
+    :param script: script to apply to the data, using '_value'
+    """
+
+    field = attr.ib(default="", validator=instance_of(str))
+    id = attr.ib(default=0, validator=instance_of(int))
+    hide = attr.ib(default=False, validator=instance_of(bool))
+    unit = attr.ib(default="", validator=instance_of(str))
+    mode = attr.ib(default="", validator=in_(["", "value_count", "sum"]))
+    script = attr.ib(default="", validator=instance_of(str))
+
+    def to_json_data(self):
+        self.settings = {}
+
+        if self.unit:
+            self.settings["unit"] = self.unit
+
+        if self.mode:
+            self.settings["mode"] = self.mode
+
+        if self.script:
+            self.settings["script"] = self.script
+
+        return {
+            "id": str(self.id),
+            "hide": self.hide,
+            "field": self.field,
+            "settings": self.settings,
+            "type": "rate",
         }

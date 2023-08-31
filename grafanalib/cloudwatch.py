@@ -27,12 +27,13 @@ class CloudwatchMetricsTarget(Target):
     :param period: Cloudwatch data period
     :param refId: target reference id
     :param region: Cloudwatch region
-    :param statistics: Cloudwatch mathematic statistic
+    :param statistics: Cloudwatch mathematic statistics (to be deprecated, prefer `statistic` instead)
+    :param statistic: Cloudwatch mathematic statistic
     :param hide: controls if given metric is displayed on visualization
     :param datasource: Grafana datasource name
     """
     alias = attr.ib(default="")
-    dimensions = attr.ib(default={}, validator=instance_of(dict))
+    dimensions = attr.ib(factory=dict, validator=instance_of(dict))
     expression = attr.ib(default="")
     id = attr.ib(default="")
     matchExact = attr.ib(default=True, validator=instance_of(bool))
@@ -42,6 +43,7 @@ class CloudwatchMetricsTarget(Target):
     refId = attr.ib(default="")
     region = attr.ib(default="default")
     statistics = attr.ib(default=["Average"], validator=instance_of(list))
+    statistic = attr.ib(default="Average")
     hide = attr.ib(default=False, validator=instance_of(bool))
     datasource = attr.ib(default=None)
 
@@ -59,6 +61,7 @@ class CloudwatchMetricsTarget(Target):
             "refId": self.refId,
             "region": self.region,
             "statistics": self.statistics,
+            "statistic": self.statistic,
             "hide": self.hide,
             "datasource": self.datasource,
         }
@@ -87,11 +90,11 @@ class CloudwatchLogsInsightsTarget(Target):
     """
     expression = attr.ib(default="")
     id = attr.ib(default="")
-    logGroupNames = attr.ib(default=[], validator=instance_of(list))
+    logGroupNames = attr.ib(factory=list, validator=instance_of(list))
     namespace = attr.ib(default="")
     refId = attr.ib(default="")
     region = attr.ib(default="default")
-    statsGroups = attr.ib(default=[], validator=instance_of(list))
+    statsGroups = attr.ib(factory=list, validator=instance_of(list))
     hide = attr.ib(default=False, validator=instance_of(bool))
     datasource = attr.ib(default=None)
 
